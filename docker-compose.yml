@@ -1,0 +1,70 @@
+version: '2.1'
+services:
+  frontend:
+    container_name: Frontend
+    depends_on:
+      - backend
+    build:
+      context: ./frontend
+      dockerfile: frontend/Dockerfile
+    ports:
+      - '3000:3000'
+    volumes: 
+      - ./frontend:/usr/local/apache2/htdocs
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.53.10
+    restart: always
+  backend:
+    container_name: Backend
+    depends_on:
+      - db 
+    build: 
+      context: ./backend
+      dockerfile: backend/Dockerfile
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3304
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+      MYSQL_DATABASE: simple_database
+    ports:
+      - '5002:5000'
+    volumes:
+      - ./backend:/app
+    networks:
+      mynetwork:
+        ipv4_address: 192.168.53.15
+    restart: always
+  db:
+    container_name: Database
+    image: "mysql:latest"
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: simple_database
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+  apache:
+    container_name: Apache2
+    depends_on:
+      - frontend
+    image: httpd:latest
+    ports:
+      - '8081:80'
+    volumes:
+      - ./frontend:/usr/local/apache2/htdocs
+    restart: always
+networks:
+  mynetwork:
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.56.0/24
+
+volumes:
+  mysql-data:
